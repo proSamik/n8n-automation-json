@@ -46,7 +46,7 @@
           "parameters": [
             {
               "name": "key",
-              "value": ""
+              "value": "YOUR_GOOGLE_API_KEY" 
             }
           ]
         },
@@ -100,7 +100,7 @@
           "parameters": [
             {
               "name": "key",
-              "value": ""
+              "value": "YOUR_GOOGLE_API_KEY" 
             }
           ]
         },
@@ -146,7 +146,7 @@
           "parameters": [
             {
               "name": "key",
-              "value": ""
+              "value": "YOUR_GOOGLE_API_KEY" 
             }
           ]
         },
@@ -210,7 +210,7 @@
           "parameters": [
             {
               "name": "token",
-              "value": ""
+              "value": "YOUR_APIFY_TOKEN" 
             }
           ]
         },
