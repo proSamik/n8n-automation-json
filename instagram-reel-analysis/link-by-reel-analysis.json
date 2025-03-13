@@ -1,0 +1,1297 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "id": "1d4b92e6-801f-4d1d-ab50-2d220810cc0e",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        1460,
+        400
+      ],
+      "webhookId": "733da468-321e-4c06-9c38-203d7a455879",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a21fe2d1-533b-4f09-94aa-9312c3dd05b8",
+              "name": "=prompt",
+              "type": "string",
+              "value": "=Analyze the Reels video: 1. What is the video about, in one sentence 2. What is the hook of the video - e.g. first 5 seconds usually, maybe the first text on the screen, maybe the first words of the author - this is the thing that is made to grab attention of the viewer, also capture any sound effect possible, transition effect also. 3. What is going on in the video - write me a whole script, that I can easily replicate, include the whole text of the author (if there is any text at all), include all the important details. Structure your output like this: 1. Idea: ..., 2. Hook: ..., 3. Script: ... - WRITE NOTHING ELSE EXCEPT FOR THIS 3 BULLETS, NO EXTRA WORDS AT THE BEGINNING."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4f39c448-9381-4e2a-bbbc-a9bb845fd03f",
+      "name": "Set Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1620,
+        400
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/upload/v1beta/files",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "YOUR_GOOGLE_API_KEY"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Goog-Upload-Protocol",
+              "value": "resumable"
+            },
+            {
+              "name": "X-Goog-Upload-Command",
+              "value": "start"
+            },
+            {
+              "name": "X-Goog-Upload-Header-Content-Length",
+              "value": "={{ $json.Video[0].size }}"
+            },
+            {
+              "name": "X-Goog-Upload-Header-Content-Type",
+              "value": "={{ $json.Video[0].type }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\"file\": {\n\"display_name\": \"{{ $json.Video[0].filename }}\"\n}\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "c0003b9f-f5d0-4a17-96b4-7c29b4fb1a7e",
+      "name": "Gemini - Generate Upload URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        220,
+        380
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Gemini - Generate Upload URL').item.json.headers['x-goog-upload-url'] }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "YOUR_GOOGLE_API_KEY"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Length",
+              "value": "={{ $('Get Video').item.json.Video[0].size }}"
+            },
+            {
+              "name": "X-Goog-Upload-Offset",
+              "value": "0"
+            },
+            {
+              "name": "X-Goog-Upload-Command",
+              "value": "upload, finalize"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "response": {}
+        }
+      },
+      "id": "d35b76f5-a96b-4d34-85db-682347a752c1",
+      "name": "Gemini - Upload File",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1040,
+        400
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "YOUR_GOOGLE_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n   \"contents\": [\n      {\n         \"parts\": [\n            {\n               \"text\": \"{{ $json.prompt }}\"\n            },\n            {\n               \"file_data\": {\n                  \"mime_type\": \"{{ $('Save Values').item.json.mimeType }}\",\n                  \"file_uri\": \"{{ $('Save Values').item.json.gemini_file_url }}\"\n               }\n            }\n         ]\n      }\n   ]\n}\n",
+        "options": {
+          "response": {}
+        }
+      },
+      "id": "0d4a451e-9090-4baa-9951-c1437b09f1b8",
+      "name": "Gemini - Ask Questions",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1820,
+        400
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4fb7b732-17f9-41a2-986d-5d62b1331242",
+              "name": "gemini_file_url",
+              "type": "string",
+              "value": "={{ $json.file.uri }}"
+            },
+            {
+              "id": "5f3018b4-571f-433c-a07b-2fb86f63b9b6",
+              "name": "mimeType",
+              "type": "string",
+              "value": "={{ $json.file.mimeType }}"
+            },
+            {
+              "id": "c5532f11-ec31-49f8-aa26-7f42b7d24fa4",
+              "name": "airtable_rec_id",
+              "type": "string",
+              "value": "={{ $('Get Video').item.json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "73481305-c7bc-40ab-a342-081ddd1cafa6",
+      "name": "Save Values",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1300,
+        400
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "YOUR_APIFY_API_TOKEN"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"directUrls\": [\n        \"{{ $('Search Creators').item.json['Instagram url'] }}\"\n    ],\n    \"resultsType\": \"posts\",\n    \"resultsLimit\": 1\n}",
+        "options": {}
+      },
+      "id": "eca2b89d-9064-41bf-95b0-b6232c507cec",
+      "name": "Apify - Fetch Reels",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        60,
+        100
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"url\": {{ JSON.stringify($('Apify - Fetch Reels').item.json.videoUrl) }}\n,\n  \"views\": {{ $json.videoViewCount }},\n\"caption\": {{ JSON.stringify($json.caption) }}\n,\n\"hashtags\": {{ JSON.stringify($json.hashtags) }},\n\"creator\": {{ JSON.stringify($json.ownerUsername) }},\n\"audio\": {{ JSON.stringify($('Apify - Fetch Reels').item.json.musicInfo.audio_id) }}\n}",
+        "options": {}
+      },
+      "id": "bf62bd3a-55ce-48cf-babe-3bfc3ff546fd",
+      "name": "Save Fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        700,
+        100
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d084fb1f-e772-4f09-a29d-9f66c8edbd52",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        -200,
+        100
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Get Video').item.json.Video[0].url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "f8ac73f7-9740-45a3-9f41-50c1a5fb3592",
+      "name": "Download File",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        700,
+        400
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "app9jtyfU8a2tj2Pg",
+          "mode": "list",
+          "cachedResultName": "Instagram Liked reels concept",
+          "cachedResultUrl": "https://airtable.com/app9jtyfU8a2tj2Pg"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbllWMXkRYTI9WiFW",
+          "mode": "list",
+          "cachedResultName": "Videos",
+          "cachedResultUrl": "https://airtable.com/appvVxU9AsFfIqtVR/tbllWMXkRYTI9WiFW"
+        },
+        "id": "={{ $json.id }}",
+        "options": {}
+      },
+      "id": "cad4dd59-fbb0-4334-9e32-b302334e9828",
+      "name": "Get Video",
+      "type": "n8n-nodes-base.airtable",
+      "position": [
+        -80,
+        380
+      ],
+      "typeVersion": 2.1,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "ypKbVrITSxgNH2Kc",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "app9jtyfU8a2tj2Pg",
+          "mode": "list",
+          "cachedResultName": "Instagram Liked reels concept",
+          "cachedResultUrl": "https://airtable.com/app9jtyfU8a2tj2Pg"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbllWMXkRYTI9WiFW",
+          "mode": "list",
+          "cachedResultName": "Videos",
+          "cachedResultUrl": "https://airtable.com/appvVxU9AsFfIqtVR/tbllWMXkRYTI9WiFW"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Get Video').first().json.id }}",
+            "Guideline": "={{ $json.candidates[0].content.parts[0].text }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Instagram Url",
+              "displayName": "Instagram Url",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Video",
+              "displayName": "Video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Creation Date",
+              "displayName": "Creation Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Views",
+              "displayName": "Views",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "audio id",
+              "displayName": "audio id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "hashtags",
+              "displayName": "hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "creator",
+              "displayName": "creator",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Guideline",
+              "displayName": "Guideline",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "39bd5bd6-23d6-4099-935b-7f12493d6df8",
+      "name": "Set Guideline",
+      "type": "n8n-nodes-base.airtable",
+      "position": [
+        2000,
+        400
+      ],
+      "typeVersion": 2.1,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "ypKbVrITSxgNH2Kc",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "app9jtyfU8a2tj2Pg",
+          "mode": "list",
+          "cachedResultName": "Instagram Liked reels concept",
+          "cachedResultUrl": "https://airtable.com/app9jtyfU8a2tj2Pg"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblp31TvkFft8LGhP",
+          "mode": "list",
+          "cachedResultName": "Creators",
+          "cachedResultUrl": "https://airtable.com/appvVxU9AsFfIqtVR/tblp31TvkFft8LGhP"
+        },
+        "returnAll": false,
+        "limit": {},
+        "options": {}
+      },
+      "id": "6b35d608-4c50-4493-a60e-8444542e7477",
+      "name": "Search Creators",
+      "type": "n8n-nodes-base.airtable",
+      "position": [
+        -420,
+        100
+      ],
+      "typeVersion": 2.1,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "ypKbVrITSxgNH2Kc",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "id": "17ec411d-d7e6-49cf-a0df-b5a70e4da0d6",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        -640,
+        100
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "content": "### Replace Apify token",
+        "height": 80,
+        "width": 220,
+        "color": 6
+      },
+      "id": "f9319452-919d-4a3d-baa9-eb3d2412cf6f",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Replace Google token",
+        "height": 80,
+        "width": 200,
+        "color": 6
+      },
+      "id": "bdb39c66-7789-4178-b4ac-228ecf68e304",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        80,
+        300
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Replace Google token",
+        "height": 80,
+        "width": 200,
+        "color": 6
+      },
+      "id": "996d02cd-99d7-4078-a080-ffc96a1457eb",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        420,
+        300
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Replace Google token",
+        "height": 80,
+        "width": 200,
+        "color": 6
+      },
+      "id": "9dce8d53-a0a1-4f8d-b270-b8016c82d822",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1140,
+        300
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Set your own prompt for analysis",
+        "height": 80,
+        "width": 200,
+        "color": 6
+      },
+      "id": "16922954-6974-4a46-904a-ee89433def91",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        920,
+        300
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ $node['Loop Over Items1'].context[\"done\"] }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -540,
+        380
+      ],
+      "id": "16f539ed-13f3-41ca-955e-07c197a6c076",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        400
+      ],
+      "id": "c306986a-9355-4c53-a0cb-435f2ebf6736",
+      "name": "Wait1",
+      "webhookId": "488df7e6-5877-49d9-b536-a8a7ee35d7f9"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        860,
+        400
+      ],
+      "id": "4f881796-7bb5-4b17-98f0-1ec772c198ca",
+      "name": "Wait2",
+      "webhookId": "962370ea-e227-40c8-9cae-030a10e326d8"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f85d9e06-6bcd-4649-8f2b-73eb73e84ce3",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "no_items",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        100
+      ],
+      "id": "f9450682-827e-4739-b2e6-22c4df5a9ca1",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app9jtyfU8a2tj2Pg",
+          "mode": "list",
+          "cachedResultName": "Instagram Liked reels concept",
+          "cachedResultUrl": "https://airtable.com/app9jtyfU8a2tj2Pg"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbllWMXkRYTI9WiFW",
+          "mode": "list",
+          "cachedResultName": "Videos",
+          "cachedResultUrl": "https://airtable.com/app9jtyfU8a2tj2Pg/tbllWMXkRYTI9WiFW"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Views": "={{ $json.views }}",
+            "Caption": "={{ $json.caption }}",
+            "Video": "={{ [ {\"url\":$json.url} ] }}",
+            "Creation Date": "={{ new Date().toISOString().split('T')[0] }}",
+            "Instagram Url": "={{ $json.url }}",
+            "hashtags": "={{ $json.hashtags }}{{ $json.hashtags }}",
+            "audio id": "={{ $('Save Fields').item.json.audio }}",
+            "creator": "={{ $('Save Fields').item.json.creator }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Instagram Url",
+              "displayName": "Instagram Url",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Video",
+              "displayName": "Video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Creation Date",
+              "displayName": "Creation Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Views",
+              "displayName": "Views",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "audio id",
+              "displayName": "audio id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "hashtags",
+              "displayName": "hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "creator",
+              "displayName": "creator",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Guideline",
+              "displayName": "Guideline",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -280,
+        380
+      ],
+      "id": "838cdc6f-a789-4cd9-a171-001384ff5cd3",
+      "name": "Put the segregated data",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "ypKbVrITSxgNH2Kc",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Set Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Prompt": {
+      "main": [
+        [
+          {
+            "node": "Gemini - Ask Questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini - Generate Upload URL": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini - Upload File": {
+      "main": [
+        [
+          {
+            "node": "Save Values",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini - Ask Questions": {
+      "main": [
+        [
+          {
+            "node": "Set Guideline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Values": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify - Fetch Reels": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Apify - Fetch Reels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video": {
+      "main": [
+        [
+          {
+            "node": "Gemini - Generate Upload URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Guideline": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Creators": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search Creators",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Put the segregated data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Gemini - Upload File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Put the segregated data": {
+      "main": [
+        [
+          {
+            "node": "Get Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Apify - Fetch Reels": [
+      {
+        "inputUrl": "https://www.instagram.com/p/DD8LOc5SIcW/",
+        "id": "3529745579561748246",
+        "type": "Video",
+        "shortCode": "DD8LOc5SIcW",
+        "caption": "👉 C0MMENT “create” and I’ll send you this AI.\n\n🤖 AI Tool: @create_xyz\n\nFollow @power.ai & @perceiveai for more ChatGPT and AI tips, tricks, hacks!\n\n#ai #artificialintelligence #aitools #aihacks #chatgpt #tech #technology #ainews",
+        "hashtags": [
+          "ai",
+          "artificialintelligence",
+          "aitools",
+          "aihacks",
+          "chatgpt",
+          "tech",
+          "technology",
+          "ainews"
+        ],
+        "mentions": [
+          "create_xyz",
+          "power.ai",
+          "perceiveai"
+        ],
+        "url": "https://www.instagram.com/p/DD8LOc5SIcW/",
+        "commentsCount": 14019,
+        "firstComment": "Create",
+        "latestComments": [
+          {
+            "id": "17941670531977229",
+            "text": "Create",
+            "ownerUsername": "ddezentje",
+            "ownerProfilePicUrl": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/64261621_2367643586895990_5491296755167264768_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=106&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=CmtJESpZh2UQ7kNvgEPSvqL&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYEUMhDq0Eq3x5WWhJNpyF1whRoPqIsZ0fGTsPS0vziyDA&oe=67D8A4E9&_nc_sid=10d13b",
+            "timestamp": "2025-03-13T10:51:25.000Z",
+            "repliesCount": 0,
+            "replies": [],
+            "likesCount": 0,
+            "owner": {
+              "id": "1662986583",
+              "is_verified": false,
+              "profile_pic_url": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/64261621_2367643586895990_5491296755167264768_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=106&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=CmtJESpZh2UQ7kNvgEPSvqL&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYEUMhDq0Eq3x5WWhJNpyF1whRoPqIsZ0fGTsPS0vziyDA&oe=67D8A4E9&_nc_sid=10d13b",
+              "username": "ddezentje"
+            }
+          },
+          {
+            "id": "18095244511535705",
+            "text": "Create",
+            "ownerUsername": "t.muennich",
+            "ownerProfilePicUrl": "https://instagram.fpbc1-2.fna.fbcdn.net/v/t51.2885-19/295713091_1084437402463960_790383078343751921_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-2.fna.fbcdn.net&_nc_cat=104&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=eErjp0A_Ch8Q7kNvgFzBcsI&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYFMahfLRxGytfwXCO-49VKxi3dYhpmEDzLSUjCmR-v7Jg&oe=67D87FD5&_nc_sid=10d13b",
+            "timestamp": "2025-03-13T10:08:59.000Z",
+            "repliesCount": 0,
+            "replies": [],
+            "likesCount": 0,
+            "owner": {
+              "id": "22727935585",
+              "is_verified": false,
+              "profile_pic_url": "https://instagram.fpbc1-2.fna.fbcdn.net/v/t51.2885-19/295713091_1084437402463960_790383078343751921_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-2.fna.fbcdn.net&_nc_cat=104&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=eErjp0A_Ch8Q7kNvgFzBcsI&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYFMahfLRxGytfwXCO-49VKxi3dYhpmEDzLSUjCmR-v7Jg&oe=67D87FD5&_nc_sid=10d13b",
+              "username": "t.muennich"
+            }
+          },
+          {
+            "id": "17949022457947146",
+            "text": "Create",
+            "ownerUsername": "xx_4k_",
+            "ownerProfilePicUrl": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/122412261_809005676314757_105784103134744621_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=L5Z0XwtOZwAQ7kNvgG3GieK&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYFclIADKQ7-RI2hMgkVPZTkgzhqjdD0uD31yXVFW2u54A&oe=67D895AA&_nc_sid=10d13b",
+            "timestamp": "2025-03-13T06:48:27.000Z",
+            "repliesCount": 0,
+            "replies": [],
+            "likesCount": 0,
+            "owner": {
+              "id": "15238974740",
+              "is_verified": false,
+              "profile_pic_url": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/122412261_809005676314757_105784103134744621_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=L5Z0XwtOZwAQ7kNvgG3GieK&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYFclIADKQ7-RI2hMgkVPZTkgzhqjdD0uD31yXVFW2u54A&oe=67D895AA&_nc_sid=10d13b",
+              "username": "xx_4k_"
+            }
+          },
+          {
+            "id": "18057730342894386",
+            "text": "Create",
+            "ownerUsername": "kemani7603",
+            "ownerProfilePicUrl": "https://instagram.fpbc1-2.fna.fbcdn.net/v/t51.2885-19/418787804_393770799867939_4173797754279476715_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-2.fna.fbcdn.net&_nc_cat=103&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=gKECwG5poioQ7kNvgGwskVs&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYGPlWX42_LW8ML_QjzIjw_-TIzi_NM6vsTvpwj5fz7xng&oe=67D89C68&_nc_sid=10d13b",
+            "timestamp": "2025-03-13T06:19:21.000Z",
+            "repliesCount": 0,
+            "replies": [],
+            "likesCount": 0,
+            "owner": {
+              "id": "217154578",
+              "is_verified": false,
+              "profile_pic_url": "https://instagram.fpbc1-2.fna.fbcdn.net/v/t51.2885-19/418787804_393770799867939_4173797754279476715_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-2.fna.fbcdn.net&_nc_cat=103&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=gKECwG5poioQ7kNvgGwskVs&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYGPlWX42_LW8ML_QjzIjw_-TIzi_NM6vsTvpwj5fz7xng&oe=67D89C68&_nc_sid=10d13b",
+              "username": "kemani7603"
+            }
+          },
+          {
+            "id": "18080762095634286",
+            "text": "Create",
+            "ownerUsername": "rustyhustle51",
+            "ownerProfilePicUrl": "https://instagram.fpbc1-2.fna.fbcdn.net/v/t51.2885-19/453730578_999319488601111_603947068951564538_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-2.fna.fbcdn.net&_nc_cat=107&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=dCe7cl3LjjEQ7kNvgGPIn_3&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYEfKIyGN1HemhQRy-rrqoTsoY5_G9Oe4W03cmbA2KTxTg&oe=67D880A4&_nc_sid=10d13b",
+            "timestamp": "2025-03-13T05:54:59.000Z",
+            "repliesCount": 0,
+            "replies": [],
+            "likesCount": 0,
+            "owner": {
+              "id": "68178193412",
+              "is_verified": false,
+              "profile_pic_url": "https://instagram.fpbc1-2.fna.fbcdn.net/v/t51.2885-19/453730578_999319488601111_603947068951564538_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-2.fna.fbcdn.net&_nc_cat=107&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=dCe7cl3LjjEQ7kNvgGPIn_3&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYEfKIyGN1HemhQRy-rrqoTsoY5_G9Oe4W03cmbA2KTxTg&oe=67D880A4&_nc_sid=10d13b",
+              "username": "rustyhustle51"
+            }
+          },
+          {
+            "id": "18107332231487312",
+            "text": "Create",
+            "ownerUsername": "christianvitters",
+            "ownerProfilePicUrl": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/471667256_1309758020035362_4833598333738990165_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=106&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=qlYcXb2qKTQQ7kNvgE6LS2F&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYG2QwEOCKNkhQ0J78Xd43MfWeQAefguOZmO6S-kfQ2knw&oe=67D89C9F&_nc_sid=10d13b",
+            "timestamp": "2025-03-13T05:51:12.000Z",
+            "repliesCount": 0,
+            "replies": [],
+            "likesCount": 0,
+            "owner": {
+              "id": "1830354338",
+              "is_verified": false,
+              "profile_pic_url": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/471667256_1309758020035362_4833598333738990165_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=106&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=qlYcXb2qKTQQ7kNvgE6LS2F&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYG2QwEOCKNkhQ0J78Xd43MfWeQAefguOZmO6S-kfQ2knw&oe=67D89C9F&_nc_sid=10d13b",
+              "username": "christianvitters"
+            }
+          },
+          {
+            "id": "18055109443897580",
+            "text": "Create",
+            "ownerUsername": "jrohr316",
+            "ownerProfilePicUrl": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/483277959_556558650089853_4803819277399650929_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=109&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=27eUbkZkC-MQ7kNvgHhcmkY&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYHdS4xx92tvQhRI7kyAoUOKPT0spb4j6mFMdaqy2896HA&oe=67D87B22&_nc_sid=10d13b",
+            "timestamp": "2025-03-13T05:38:09.000Z",
+            "repliesCount": 0,
+            "replies": [],
+            "likesCount": 0,
+            "owner": {
+              "id": "72864958217",
+              "is_verified": false,
+              "profile_pic_url": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/483277959_556558650089853_4803819277399650929_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=109&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=27eUbkZkC-MQ7kNvgHhcmkY&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYHdS4xx92tvQhRI7kyAoUOKPT0spb4j6mFMdaqy2896HA&oe=67D87B22&_nc_sid=10d13b",
+              "username": "jrohr316"
+            }
+          },
+          {
+            "id": "18378558754136635",
+            "text": "Create",
+            "ownerUsername": "patterson.diana",
+            "ownerProfilePicUrl": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/123246210_3360161584032785_8842192915073063957_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=BC5tyjxjxFsQ7kNvgHodPmk&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYGMLvC9njclKzYa-MSYhbC3I6dwguGD6kO53eCCoI3cSg&oe=67D888D9&_nc_sid=10d13b",
+            "timestamp": "2025-03-13T04:28:03.000Z",
+            "repliesCount": 0,
+            "replies": [],
+            "likesCount": 0,
+            "owner": {
+              "id": "1402837753",
+              "is_verified": false,
+              "profile_pic_url": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/123246210_3360161584032785_8842192915073063957_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=BC5tyjxjxFsQ7kNvgHodPmk&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYGMLvC9njclKzYa-MSYhbC3I6dwguGD6kO53eCCoI3cSg&oe=67D888D9&_nc_sid=10d13b",
+              "username": "patterson.diana"
+            }
+          },
+          {
+            "id": "18147815002368056",
+            "text": "Create",
+            "ownerUsername": "stanstvn",
+            "ownerProfilePicUrl": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/61162229_297701181107358_2036809582096941056_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=106&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=B_4D6RhrVXEQ7kNvgHEyzdp&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYGBalh6mhnXM_FYoOApSr8VZ0kw_m5AzFM1tYJgbXmhow&oe=67D884A8&_nc_sid=10d13b",
+            "timestamp": "2025-03-13T03:52:54.000Z",
+            "repliesCount": 0,
+            "replies": [],
+            "likesCount": 0,
+            "owner": {
+              "id": "5402161540",
+              "is_verified": false,
+              "profile_pic_url": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/61162229_297701181107358_2036809582096941056_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=106&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=B_4D6RhrVXEQ7kNvgHEyzdp&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYGBalh6mhnXM_FYoOApSr8VZ0kw_m5AzFM1tYJgbXmhow&oe=67D884A8&_nc_sid=10d13b",
+              "username": "stanstvn"
+            }
+          },
+          {
+            "id": "18053384717469229",
+            "text": "Create",
+            "ownerUsername": "viorelmindu",
+            "ownerProfilePicUrl": "https://instagram.foss3-1.fna.fbcdn.net/v/t51.2885-19/44884218_345707102882519_2446069589734326272_n.jpg?stp=dst-jpg_e0_s150x150_tt6&_nc_ht=instagram.foss3-1.fna.fbcdn.net&_nc_cat=111&_nc_oc=Q6cZ2AGOaABxUgU5Kq09aP3twkJPHhTMTxgIMuDmhgAygxhi_8GLTchfnuypDt0bhhEh-Eg&_nc_ohc=fCA6ZBH3of8Q7kNvgGcBNVK&_nc_gid=255bc93665834a01a35c210f826df919&edm=AHoPC7cBAAAA&ccb=7-5&ig_cache_key=YW5vbnltb3VzX3Byb2ZpbGVfcGlj.3-ccb7-5&oh=00_AYEy1wh5nK0Q6gmic0iYp9KmKoB7SY4arGTxPk3T4hulJg&oe=67D89ECF&_nc_sid=4eb3e4",
+            "timestamp": "2025-03-13T01:03:20.000Z",
+            "repliesCount": 0,
+            "replies": [],
+            "likesCount": 0,
+            "owner": {
+              "id": "31271709521",
+              "is_verified": false,
+              "profile_pic_url": "https://instagram.foss3-1.fna.fbcdn.net/v/t51.2885-19/44884218_345707102882519_2446069589734326272_n.jpg?stp=dst-jpg_e0_s150x150_tt6&_nc_ht=instagram.foss3-1.fna.fbcdn.net&_nc_cat=111&_nc_oc=Q6cZ2AGOaABxUgU5Kq09aP3twkJPHhTMTxgIMuDmhgAygxhi_8GLTchfnuypDt0bhhEh-Eg&_nc_ohc=fCA6ZBH3of8Q7kNvgGcBNVK&_nc_gid=255bc93665834a01a35c210f826df919&edm=AHoPC7cBAAAA&ccb=7-5&ig_cache_key=YW5vbnltb3VzX3Byb2ZpbGVfcGlj.3-ccb7-5&oh=00_AYEy1wh5nK0Q6gmic0iYp9KmKoB7SY4arGTxPk3T4hulJg&oe=67D89ECF&_nc_sid=4eb3e4",
+              "username": "viorelmindu"
+            }
+          }
+        ],
+        "dimensionsHeight": 1920,
+        "dimensionsWidth": 1080,
+        "displayUrl": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.29350-15/472372415_1670945800435442_403592712752169815_n.jpg?stp=dst-jpg_e35_p1080x1080_sh0.08_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=102&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=2yjg0-DxRF4Q7kNvgFDseXS&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYGUMezPT_-_e-Pe3u6iEJnaZnCpCSNHrX5jbfwrIymG7Q&oe=67D881AC&_nc_sid=10d13b",
+        "images": [],
+        "videoUrl": "https://instagram.fpbc1-2.fna.fbcdn.net/o1/v/t16/f2/m86/AQM4egf3LvnSFGvnz8da2UpE_dxwEL_WshmWINockj7qOQeU2TLzoZr03n4yOF9ZjoUrL1ilCF3Vh53ShMN4hAQNyuM73o4V3y0BZ4g.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNzIwLmJhc2VsaW5lIn0&_nc_cat=104&vs=9321408997872253_1299891040&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC84QzRCQUUzNEZDREFGMkFGOUY1RTlCMkVCRjQ3QzBBMl92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dLOUJGeHlsZ0VUM2w1MEJBRlRUVHM1dHltRjNicV9FQUFBRhUCAsgBACgAGAAbABUAACa88sPmm6TJPxUCKAJDMywXQEoqn752yLQYEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HAA%3D%3D&_nc_rid=3a53404173&ccb=9-4&oh=00_AYFnlHsVasYUVBXKue54uqrsFSTEl8PIGxPuOdCS5AsOPw&oe=67D4ADC8&_nc_sid=10d13b",
+        "alt": null,
+        "likesCount": 24955,
+        "videoViewCount": 402515,
+        "videoPlayCount": 1559058,
+        "timestamp": "2024-12-24T00:02:09.000Z",
+        "childPosts": [],
+        "ownerFullName": "Artificial Intelligence",
+        "ownerUsername": "power.ai",
+        "ownerId": "58134309921",
+        "productType": "clips",
+        "videoDuration": 52.337,
+        "isSponsored": false,
+        "taggedUsers": [
+          {
+            "full_name": "Caleb Torres",
+            "id": "55654690408",
+            "is_verified": true,
+            "profile_pic_url": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/451231829_997687238352210_4736485881381639956_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=106&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=nrgGwCmz77gQ7kNvgHkkjCS&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYFcO_IB7UrCaahxa0kC-bjR3vSCXWlLqTybaZJTZcZNqw&oe=67D87781&_nc_sid=10d13b",
+            "username": "perceiveai"
+          }
+        ],
+        "musicInfo": {
+          "artist_name": "power.ai",
+          "song_name": "Original audio",
+          "uses_original_audio": true,
+          "should_mute_audio": false,
+          "should_mute_audio_reason": "",
+          "audio_id": "576932048274679"
+        },
+        "coauthorProducers": [
+          {
+            "id": "55654690408",
+            "is_verified": true,
+            "profile_pic_url": "https://instagram.fpbc1-1.fna.fbcdn.net/v/t51.2885-19/451231829_997687238352210_4736485881381639956_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fpbc1-1.fna.fbcdn.net&_nc_cat=106&_nc_oc=Q6cZ2AFrmit6To5smyT8JiKSB9iRjnqy-1k03SD-rmplZq4egsDoIMGWTJEOGQI2BhDT5kc&_nc_ohc=nrgGwCmz77gQ7kNvgHkkjCS&_nc_gid=3a5345cb817444e987b7f8f1a80dda40&edm=APs17CUBAAAA&ccb=7-5&oh=00_AYFcO_IB7UrCaahxa0kC-bjR3vSCXWlLqTybaZJTZcZNqw&oe=67D87781&_nc_sid=10d13b",
+            "username": "perceiveai"
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "84b87970f40cd2e5f4aae113e07b629b98eb2efe3238c4854405fe22dff99738"
+  }
+}
