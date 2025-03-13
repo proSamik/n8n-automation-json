@@ -20,7 +20,7 @@ This automation system helps you:
 ## Getting Started
 
 For detailed setup instructions, refer to the README.md file in the date-specific folder:
-- [March 13 Setup Guide](./march-13/README.md)
+- [Instagram Reel Analysis](./instagram-reel-analysis/README.md)
 
 ## Using the System
 
