@@ -1,0 +1,334 @@
+{
+    "nodes": [
+      {
+        "parameters": {
+          "content": "**Summarize YouTube videos**\n\nThis project automates the summarization of YouTube videos, transforming lengthy content into concise, actionable insights. By leveraging AI and workflow automation, it extracts video transcripts, analyzes key points, and generates summaries, saving time for content creators, researchers, and professionals. Perfect for staying informed, conducting research, or repurposing video content efficiently.",
+          "height": 120,
+          "width": 1160,
+          "color": 7
+        },
+        "id": "2172b529-d8d4-4172-8078-3e393e9b31d4",
+        "name": "Sticky Note",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -340,
+          -140
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "content": "Add the full YouTube URL. ☝️\nYou can change this input to a webhook or anything else.",
+          "height": 80,
+          "width": 230
+        },
+        "id": "cb6483d9-396c-40be-b1d9-333eff97bf25",
+        "name": "Sticky Note1",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -360,
+          260
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.apify.com/v2/acts/topaz_sharingan~youtube-transcript-scraper-1/run-sync-get-dataset-items",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "token",
+                "value": "APIFY-TOKEN"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n    \"startUrls\": [\"{{ $json['Full URL'] }}\"],\n    \"includeTimestamps\": \"Yes\"\n}",
+          "options": {}
+        },
+        "id": "6b9b1c72-1176-4131-8f12-55486a9c104d",
+        "name": "Request YouTube Transcript",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          -20,
+          120
+        ],
+        "typeVersion": 4.2
+      },
+      {
+        "parameters": {
+          "content": "Once you follow the Setup Instructions (mentioned in the template page description), you can insert the full URL endpoint, which includes both the POST Endpoint and API Key. 👇",
+          "height": 340,
+          "width": 280,
+          "color": 3
+        },
+        "id": "448e42ec-47e2-407c-9fff-778fc14a7e5c",
+        "name": "Sticky Note2",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -100,
+          0
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "formTitle": "Summarize YouTube video's",
+          "formFields": {
+            "values": [
+              {
+                "fieldLabel": "Full URL"
+              }
+            ]
+          },
+          "options": {
+            "path": "ddd"
+          }
+        },
+        "id": "4d771d96-11b3-43cf-8d3e-4b4843f7f8aa",
+        "name": "YouTube video URL",
+        "type": "n8n-nodes-base.formTrigger",
+        "position": [
+          -240,
+          120
+        ],
+        "webhookId": "f56feec2-b78b-4d68-868c-41971d6781c6",
+        "typeVersion": 2.2
+      },
+      {
+        "parameters": {
+          "content": "☝️ Optional\nIf the workflow ends here, Consider checking with another enrichment service.",
+          "height": 100,
+          "color": 4
+        },
+        "id": "cda81085-9b80-4c5f-96cd-1f4e0efe7b1e",
+        "name": "Sticky Note3",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          960,
+          420
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=You are a specialized AI assistant that analyzes YouTube video transcripts for indie developers and SaaS entrepreneurs. Your primary functions are:\n\n1. Summarise the Youtube transcript in bullet points with plan of action to perform.\n2. You have to analyse and suggest the plan of actions in bullet points with examples which will be viral and like by other people.\n3. Examples should be catered for SaaS Developers and entrepreneurs who are looking for building personal brand\n\nInput Format\n\nVideo Title: {{ $json.videoTitle }}\n\nUrl: {{ $json.url }}\n\nThe user will provide a YouTube transcript with timestamps in this format:\n```\n{{ JSON.stringify($json.transcript) }}\n```\n\nOutput Format in JSON\n\n{\n\"general summary\" : \"General Summary text\",\n\"summary in bullet points\" : \"Summary in bullet points after in-depth analysis\",\n\"Plan of actions\" : \"Implementation roadmap text with bullet points\",\n\"examples\" : \"Without hallucination, researched backed examples\"\n}\n\nConstraints:\n\n- Use plain text, no need to do formatting except new lines, spaces and bullet points\n- Use proper spaces for better visualisations\n- Give legit and valid examples\n- Don't hallucinate\n- Your output response should be greater than 750 words",
+          "hasOutputParser": true,
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 1.7,
+        "position": [
+          240,
+          120
+        ],
+        "id": "9f8afb5a-023e-4e11-b56f-99303917ff65",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+        "typeVersion": 1,
+        "position": [
+          240,
+          320
+        ],
+        "id": "1f816849-f4bd-424d-bc1b-03bf93cab888",
+        "name": "OpenRouter Chat Model",
+        "credentials": {
+          "openRouterApi": {
+            "id": "OIO7uXitUrZDqkJY",
+            "name": "OpenRouter account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\n\"general summary\" : \"General Summary text\",\n\"summary in bullet points\" : \"Summary in bullet points after in-depth analysis\",\n\"Plan of actions\" : \"Implementation roadmap text with bullet points\",\n\"examples\" : \"Without hallucination, researched backed examples\"\n}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.2,
+        "position": [
+          400,
+          340
+        ],
+        "id": "8cba91da-50a6-421b-8041-018a22717607",
+        "name": "Structured Output Parser"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "1y4jzqEyy3FlCriJZoLCfP9XyATunZd56URp14dyrl8Y",
+            "mode": "list",
+            "cachedResultName": "Youtube Plan of Actions",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1y4jzqEyy3FlCriJZoLCfP9XyATunZd56URp14dyrl8Y/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1brzMcegAwUOdkzoAwqn6yWZBW8YnGykt2lizENzZz5U/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Video URL": "={{ $('Request YouTube Transcript').item.json.url }}",
+              "Title": "={{ $('Request YouTube Transcript').item.json.videoTitle }}",
+              "General Summary": "={{ $json.output['general summary'] }}",
+              "Summary in bullet points": "={{ $json.output['summary in bullet points'] }}",
+              "Plan of actions": "={{ $json.output['Plan of actions'] }}",
+              "Examples": "={{ $json.output.examples }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Video URL",
+                "displayName": "Video URL",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Title",
+                "displayName": "Title",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "General Summary",
+                "displayName": "General Summary",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Summary in bullet points",
+                "displayName": "Summary in bullet points",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Plan of actions",
+                "displayName": "Plan of actions",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Examples",
+                "displayName": "Examples",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.5,
+        "position": [
+          600,
+          120
+        ],
+        "id": "cab9a6e0-1106-4f9d-a6ff-1da802d0f87f",
+        "name": "Google Sheets",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "ukMjgMt5vFLUsBk9",
+            "name": "Google Sheets account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Request YouTube Transcript": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "YouTube video URL": {
+        "main": [
+          [
+            {
+              "node": "Request YouTube Transcript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Google Sheets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenRouter Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Structured Output Parser": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "pinData": {},
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "84b87970f40cd2e5f4aae113e07b629b98eb2efe3238c4854405fe22dff99738"
+    }
+  }
