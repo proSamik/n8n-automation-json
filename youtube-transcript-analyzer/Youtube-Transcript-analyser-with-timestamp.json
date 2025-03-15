@@ -1,0 +1,1102 @@
+{
+    "nodes": [
+      {
+        "parameters": {
+          "content": "**Summarize YouTube videos**\n\nThis project automates the summarization of YouTube videos, transforming lengthy content into concise, actionable insights. By leveraging AI and workflow automation, it extracts video transcripts, analyzes key points, and generates summaries, saving time for content creators, researchers, and professionals. Perfect for staying informed, conducting research, or repurposing video content efficiently.",
+          "height": 120,
+          "width": 1160,
+          "color": 7
+        },
+        "id": "2c2c48aa-6207-42f1-a78d-2dc2db7e4dd4",
+        "name": "Sticky Note",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -340,
+          -140
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "content": "Add the full YouTube URL. ☝️\nYou can change this input to a webhook or anything else.",
+          "height": 80,
+          "width": 230
+        },
+        "id": "828e9c2e-e0f2-4889-8897-3c3c3298d32c",
+        "name": "Sticky Note1",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -360,
+          260
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.apify.com/v2/acts/topaz_sharingan~youtube-transcript-scraper-1/run-sync-get-dataset-items",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "token",
+                "value": "APIFY-TOKEN"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n    \"startUrls\": [\"{{ $json['Full URL'] }}\"],\n    \"includeTimestamps\": \"Yes\"\n}",
+          "options": {}
+        },
+        "id": "d076112a-8eb4-4187-94ff-b45714f62736",
+        "name": "Request YouTube Transcript",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          -20,
+          120
+        ],
+        "typeVersion": 4.2
+      },
+      {
+        "parameters": {
+          "content": "Once you follow the Setup Instructions (mentioned in the template page description), you can insert the full URL endpoint, which includes both the POST Endpoint and API Key. 👇",
+          "height": 340,
+          "width": 280,
+          "color": 3
+        },
+        "id": "61d0899a-b5d7-45bf-9511-ca4dc1c166d5",
+        "name": "Sticky Note2",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -100,
+          0
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "formTitle": "Summarize YouTube video's",
+          "formFields": {
+            "values": [
+              {
+                "fieldLabel": "Full URL"
+              }
+            ]
+          },
+          "options": {
+            "path": "ddd"
+          }
+        },
+        "id": "8b30c2fb-ad46-4d52-8f74-f57ed9470915",
+        "name": "YouTube video URL",
+        "type": "n8n-nodes-base.formTrigger",
+        "position": [
+          -240,
+          120
+        ],
+        "webhookId": "3dc17600-3020-40b1-be8f-e65ef45269b6",
+        "typeVersion": 2.2
+      },
+      {
+        "parameters": {
+          "content": "☝️ Optional\nIf the workflow ends here, Consider checking with another enrichment service.",
+          "height": 100,
+          "color": 4
+        },
+        "id": "39c74662-2f07-4d41-8bc3-089b5c63f541",
+        "name": "Sticky Note3",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          960,
+          420
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=You are a specialized AI assistant that analyzes YouTube video transcripts for indie developers and SaaS entrepreneurs. Your primary functions are:\n\n1. Extract and highlight the critical 20% of content that delivers 80% of the value (following the Pareto principle)\n2. Create actionable implementation plans tailored to indie/SaaS development contexts\n3. Provide precise timestamp references for all insights\n4. Focus on action driven results and provide examples if the speaker hasn't given any\n5. You should really give indepth-analysis, make sure to give detailed summary\n\nInput Format\n\nVideo Title: {{ $json.videoTitle }}\n\nUrl: {{ $json.url }}\n\nThe user will provide a YouTube transcript with timestamps in this format:\n```\n{{ JSON.stringify($json.transcript) }}\n```\n\nAnalysis Guidelines\n\nCritical Content Identification\n- Highlight the most important insights that represent breakthrough concepts, key strategies, or unique perspectives\n- Identify statements where the speaker uses emphasis words or phrases like \"this is critical,\" \"the most important thing,\" \"what changed everything for me,\" etc.\n- Focus on actionable advice rather than general background information\n- Look for counter-intuitive points that challenge conventional wisdom\n\nImplementation Planning\nFor each major insight or group of related insights:\n1. Create a specific action item for an indie developer or SaaS entrepreneur\n2. Provide implementation context (tools, resources, technologies needed)\n3. Explain expected outcomes and relevant metrics\n4. Note potential challenges and how to overcome them\n5. Suggest a reasonable implementation timeline\n\nOutput Format in JSON\n\n{\n\"general summary\" : \"General Summary text\",\n\"essential insight\" : \"Essential Insights Summary text\",\n\"implementation roadmap\" : \"Implementation roadmap text with bullet points\",\n\"strategic Context\" : \"Strategic Context text\"\n}\n\nDetailed explaination of the output format texts-\n\n0. General Summary\n\n1. Essential Insights Summary \nPresent the critical insights with their timestamps:\n\nCore Insight: [Summary of key point] [TIMESTAMP]\n> Direct quote from the transcript that encapsulates the insight\n\nBrief explanation of why this is important and how it applies to indie/SaaS development.\n\n2. Implementation Roadmap\nCreate a practical roadmap with clear steps:\n\nAction Plan: [Title of Implementation Plan]\nInsight Reference: [TIMESTAMP]\n1. Immediate Action: Specific first step to take\n2. Expected Outcome: What success looks like for this implementation\n\n3. Strategic Context\nProvide broader context for how these insights fit into:\n- Current industry trends\n- Small team or solo developer constraints\n- Low-budget implementation considerations\n- Strategic advantages for indie developers\n\nResponse Style\n- Be concise and focused on high-leverage actions\n- Use developer-friendly language\n- Include specific technical recommendations when appropriate\n- Balance between strategic thinking and tactical implementation\n- Always reference timestamps for traceability back to the original content",
+          "hasOutputParser": true,
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 1.7,
+        "position": [
+          240,
+          120
+        ],
+        "id": "71b445b9-3631-4c67-99c6-d84412d32999",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+        "typeVersion": 1,
+        "position": [
+          240,
+          320
+        ],
+        "id": "68f7114d-d426-469e-bf18-9066d8a8ad51",
+        "name": "OpenRouter Chat Model",
+        "credentials": {
+          "openRouterApi": {
+            "id": "OIO7uXitUrZDqkJY",
+            "name": "OpenRouter account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\n\"general summary\" : \"General Summary text\",\n\"essential insight\" : \"Essential Insights Summary text\",\n\"implementation roadmap\" : \"Implementation roadmap text with bullet points\",\n\"strategic Context\" : \"Strategic Context text\"\n}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.2,
+        "position": [
+          480,
+          320
+        ],
+        "id": "484f5633-5fc9-4062-a857-24abe8133846",
+        "name": "Structured Output Parser"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "1brzMcegAwUOdkzoAwqn6yWZBW8YnGykt2lizENzZz5U",
+            "mode": "list",
+            "cachedResultName": "Youtube Summary for me",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1brzMcegAwUOdkzoAwqn6yWZBW8YnGykt2lizENzZz5U/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1brzMcegAwUOdkzoAwqn6yWZBW8YnGykt2lizENzZz5U/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Video URL": "={{ $('Request YouTube Transcript').item.json.url }}",
+              "Title": "={{ $('Request YouTube Transcript').item.json.videoTitle }}",
+              "General Summary": "={{ $json.output['general summary'] }}",
+              "Essential Insights": "={{ $json.output['essential insight'] }}",
+              "Implementaion Roadmap": "={{ $json.output['implementation roadmap'] }}",
+              "Strategic Context": "={{ $json.output['strategic Context'] }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Video URL",
+                "displayName": "Video URL",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Title",
+                "displayName": "Title",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "General Summary",
+                "displayName": "General Summary",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Essential Insights",
+                "displayName": "Essential Insights",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Implementaion Roadmap",
+                "displayName": "Implementaion Roadmap",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Strategic Context",
+                "displayName": "Strategic Context",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.5,
+        "position": [
+          600,
+          120
+        ],
+        "id": "5074e6e7-b9ba-47e2-bff2-0283e70c421b",
+        "name": "Google Sheets",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "ukMjgMt5vFLUsBk9",
+            "name": "Google Sheets account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Request YouTube Transcript": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "YouTube video URL": {
+        "main": [
+          [
+            {
+              "node": "Request YouTube Transcript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Google Sheets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenRouter Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Structured Output Parser": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "pinData": {
+      "Request YouTube Transcript": [
+        {
+          "videoTitle": "Speak 10X Clearer: Do These 3 Vocal Exercises Every Day - YouTube",
+          "url": "http://youtube.com/watch?v=BEuwA7Cbbuc",
+          "transcript": [
+            {
+              "text": "in this video I'm going to be sharing",
+              "timestamp": "0:00"
+            },
+            {
+              "text": "with you three simple yet powerful",
+              "timestamp": "0:01"
+            },
+            {
+              "text": "exercises and it's only going to take",
+              "timestamp": "0:05"
+            },
+            {
+              "text": "you 10 minutes a day and if you stay",
+              "timestamp": "0:07"
+            },
+            {
+              "text": "consistent with it it will transform the",
+              "timestamp": "0:09"
+            },
+            {
+              "text": "clarity of your everyday speech",
+              "timestamp": "0:11"
+            },
+            {
+              "text": "dramatically can I tell you that once I",
+              "timestamp": "0:14"
+            },
+            {
+              "text": "committed to these exercises for a good",
+              "timestamp": "0:16"
+            },
+            {
+              "text": "3 to 4 months my vocal quality is",
+              "timestamp": "0:18"
+            },
+            {
+              "text": "completely changed what does that tell",
+              "timestamp": "0:20"
+            },
+            {
+              "text": "us about the art of magic tells us one",
+              "timestamp": "0:23"
+            },
+            {
+              "text": "thing it tells us that magic has existed",
+              "timestamp": "0:25"
+            },
+            {
+              "text": "way before Neuroscience or psychology",
+              "timestamp": "0:27"
+            },
+            {
+              "text": "was ever founded or discovered you are",
+              "timestamp": "0:30"
+            },
+            {
+              "text": "the direct reflection of the top five",
+              "timestamp": "0:31"
+            },
+            {
+              "text": "people you spend time with so what that",
+              "timestamp": "0:33"
+            },
+            {
+              "text": "means is that it means I can control who",
+              "timestamp": "0:36"
+            },
+            {
+              "text": "I become in the future by deciding who I",
+              "timestamp": "0:39"
+            },
+            {
+              "text": "spend time with today the first thing",
+              "timestamp": "0:41"
+            },
+            {
+              "text": "the biggest problem that most people",
+              "timestamp": "0:43"
+            },
+            {
+              "text": "have is that they Mumble most people",
+              "timestamp": "0:45"
+            },
+            {
+              "text": "Mumble and they don't move their mouth",
+              "timestamp": "0:47"
+            },
+            {
+              "text": "enough so the first vocal activity that",
+              "timestamp": "0:49"
+            },
+            {
+              "text": "I want to give you is grab a book any",
+              "timestamp": "0:52"
+            },
+            {
+              "text": "book and read that for 3 to 4 minutes a",
+              "timestamp": "0:54"
+            },
+            {
+              "text": "day and while you're reading that book",
+              "timestamp": "0:56"
+            },
+            {
+              "text": "overdo the mouth movement",
+              "timestamp": "0:58"
+            },
+            {
+              "text": "overdo it over stretch your mouth you",
+              "timestamp": "1:00"
+            },
+            {
+              "text": "overdo the movements so that when you go",
+              "timestamp": "1:03"
+            },
+            {
+              "text": "to speak every day a lot more of that",
+              "timestamp": "1:05"
+            },
+            {
+              "text": "movement will come through whereas if",
+              "timestamp": "1:08"
+            },
+            {
+              "text": "you practice yourself and you don't",
+              "timestamp": "1:10"
+            },
+            {
+              "text": "overdo it and you just kind of go what",
+              "timestamp": "1:11"
+            },
+            {
+              "text": "apps or exercises do you recommend that",
+              "timestamp": "1:13"
+            },
+            {
+              "text": "means in your everyday speech 80% of",
+              "timestamp": "1:15"
+            },
+            {
+              "text": "that will come through so if I did it in",
+              "timestamp": "1:18"
+            },
+            {
+              "text": "the way that I shared it's what apps or",
+              "timestamp": "1:20"
+            },
+            {
+              "text": "exercises do you recommend for daily",
+              "timestamp": "1:24"
+            },
+            {
+              "text": "vocal Mastery PR practice and you overdo",
+              "timestamp": "1:28"
+            },
+            {
+              "text": "the lip movements and the tongue",
+              "timestamp": "1:31"
+            },
+            {
+              "text": "movements these are your articulators",
+              "timestamp": "1:32"
+            },
+            {
+              "text": "how you shape sound the second exercise",
+              "timestamp": "1:34"
+            },
+            {
+              "text": "I would focus on your soft palette there",
+              "timestamp": "1:37"
+            },
+            {
+              "text": "are a lot of my students that struggle",
+              "timestamp": "1:39"
+            },
+            {
+              "text": "with volume and they kind of go ah then",
+              "timestamp": "1:41"
+            },
+            {
+              "text": "every time I try to speak with more",
+              "timestamp": "1:42"
+            },
+            {
+              "text": "volume I lose my voice or I find that I",
+              "timestamp": "1:44"
+            },
+            {
+              "text": "strain my voice or I hurt my voice it's",
+              "timestamp": "1:46"
+            },
+            {
+              "text": "because you're you're using a lot of",
+              "timestamp": "1:48"
+            },
+            {
+              "text": "your throat to create the volume right",
+              "timestamp": "1:50"
+            },
+            {
+              "text": "so you're like hi everyone I I really",
+              "timestamp": "1:52"
+            },
+            {
+              "text": "want to get my voice up can you see how",
+              "timestamp": "1:54"
+            },
+            {
+              "text": "strain this sounds if you just try to do",
+              "timestamp": "1:56"
+            },
+            {
+              "text": "that for 2 minutes you'll lose your",
+              "timestamp": "1:58"
+            },
+            {
+              "text": "voice you'll damage your voice really",
+              "timestamp": "2:00"
+            },
+            {
+              "text": "shouldn't have done that but again just",
+              "timestamp": "2:02"
+            },
+            {
+              "text": "wanted to demonstrate that for you now",
+              "timestamp": "2:04"
+            },
+            {
+              "text": "there's something called volume for free",
+              "timestamp": "2:06"
+            },
+            {
+              "text": "that's not volume for free you're paying",
+              "timestamp": "2:07"
+            },
+            {
+              "text": "a huge price for that volume I can speak",
+              "timestamp": "2:09"
+            },
+            {
+              "text": "the way I currently speak I can do that",
+              "timestamp": "2:11"
+            },
+            {
+              "text": "for 8 10 12 hours a day and it doesn't",
+              "timestamp": "2:13"
+            },
+            {
+              "text": "take much out of me anymore because I've",
+              "timestamp": "2:15"
+            },
+            {
+              "text": "learned how to efficiently access volume",
+              "timestamp": "2:17"
+            },
+            {
+              "text": "so to access that volume you want to",
+              "timestamp": "2:20"
+            },
+            {
+              "text": "lift your soft palette if you just put",
+              "timestamp": "2:22"
+            },
+            {
+              "text": "your thumbs make sure your thumbs are",
+              "timestamp": "2:24"
+            },
+            {
+              "text": "clean and feel your hard pette is that",
+              "timestamp": "2:25"
+            },
+            {
+              "text": "area right underneath your front teeth",
+              "timestamp": "2:28"
+            },
+            {
+              "text": "there notice how hard that is as you",
+              "timestamp": "2:31"
+            },
+            {
+              "text": "start to slide your thumb back you start",
+              "timestamp": "2:33"
+            },
+            {
+              "text": "to feel a it gets a bit soft after the",
+              "timestamp": "2:35"
+            },
+            {
+              "text": "hard palette and you'll notice what it's",
+              "timestamp": "2:38"
+            },
+            {
+              "text": "like it feels really slimy and really",
+              "timestamp": "2:39"
+            },
+            {
+              "text": "soft that's your soft palette the",
+              "timestamp": "2:41"
+            },
+            {
+              "text": "behavior that many of my students have",
+              "timestamp": "2:43"
+            },
+            {
+              "text": "that they didn't realize they've picked",
+              "timestamp": "2:45"
+            },
+            {
+              "text": "up is that they close their soft palette",
+              "timestamp": "2:46"
+            },
+            {
+              "text": "so their soft palette is lower and when",
+              "timestamp": "2:48"
+            },
+            {
+              "text": "your soft palette is lower that means",
+              "timestamp": "2:51"
+            },
+            {
+              "text": "that when you create voice because voice",
+              "timestamp": "2:53"
+            },
+            {
+              "text": "is created by airf flow going up your",
+              "timestamp": "2:56"
+            },
+            {
+              "text": "air pipes and then it goes through your",
+              "timestamp": "2:59"
+            },
+            {
+              "text": "larynx which also contains your your",
+              "timestamp": "3:02"
+            },
+            {
+              "text": "vocal folds and then when the air hits",
+              "timestamp": "3:05"
+            },
+            {
+              "text": "the vocal folds the vo vocal folds",
+              "timestamp": "3:07"
+            },
+            {
+              "text": "vibrates and then it creates the sound",
+              "timestamp": "3:09"
+            },
+            {
+              "text": "that sound is produced from that point",
+              "timestamp": "3:11"
+            },
+            {
+              "text": "and then one of the areas where that",
+              "timestamp": "3:13"
+            },
+            {
+              "text": "voice will start to resonate to come out",
+              "timestamp": "3:15"
+            },
+            {
+              "text": "of your mouth is the soft pallet area of",
+              "timestamp": "3:17"
+            },
+            {
+              "text": "your mouth that beautiful area then",
+              "timestamp": "3:19"
+            },
+            {
+              "text": "creates strong vibrations now if that",
+              "timestamp": "3:21"
+            },
+            {
+              "text": "area is small then the vibrations when",
+              "timestamp": "3:23"
+            },
+            {
+              "text": "they come out it sounds quiet however if",
+              "timestamp": "3:26"
+            },
+            {
+              "text": "that area is as big as as possible and",
+              "timestamp": "3:28"
+            },
+            {
+              "text": "you open up that soft palette then you",
+              "timestamp": "3:30"
+            },
+            {
+              "text": "get volume for free by the way if you're",
+              "timestamp": "3:32"
+            },
+            {
+              "text": "enjoying this video be sure to hit like",
+              "timestamp": "3:34"
+            },
+            {
+              "text": "And subscribe so that we can help more",
+              "timestamp": "3:36"
+            },
+            {
+              "text": "people become better communicators all",
+              "timestamp": "3:38"
+            },
+            {
+              "text": "right back to the video the best way to",
+              "timestamp": "3:40"
+            },
+            {
+              "text": "achieve that now is to always speak with",
+              "timestamp": "3:43"
+            },
+            {
+              "text": "a pre- yawn soft palette so just imagine",
+              "timestamp": "3:47"
+            },
+            {
+              "text": "you're yawning right now just",
+              "timestamp": "3:50"
+            },
+            {
+              "text": "go notice that when you yarn you have to",
+              "timestamp": "3:53"
+            },
+            {
+              "text": "get a sense of how it feels when it",
+              "timestamp": "3:56"
+            },
+            {
+              "text": "comes to your soft palette many of you",
+              "timestamp": "3:58"
+            },
+            {
+              "text": "right now as you're listening to this",
+              "timestamp": "4:00"
+            },
+            {
+              "text": "you have no sensation of the soft",
+              "timestamp": "4:01"
+            },
+            {
+              "text": "palette because you've never thought",
+              "timestamp": "4:03"
+            },
+            {
+              "text": "about being aware of that part of your",
+              "timestamp": "4:04"
+            },
+            {
+              "text": "body therefore you haven't built that",
+              "timestamp": "4:05"
+            },
+            {
+              "text": "sensitivity in your mind yet so you just",
+              "timestamp": "4:07"
+            },
+            {
+              "text": "got to practice it so practice it with",
+              "timestamp": "4:09"
+            },
+            {
+              "text": "this exercise here just",
+              "timestamp": "4:11"
+            },
+            {
+              "text": "go try that and notice how beautiful of",
+              "timestamp": "4:18"
+            },
+            {
+              "text": "a sound quality you can create when you",
+              "timestamp": "4:22"
+            },
+            {
+              "text": "do that that's because your soft palette",
+              "timestamp": "4:24"
+            },
+            {
+              "text": "is opened all the way back that's why",
+              "timestamp": "4:26"
+            },
+            {
+              "text": "when we yawn is this this incredible",
+              "timestamp": "4:27"
+            },
+            {
+              "text": "sound but then when you speak you kind",
+              "timestamp": "4:30"
+            },
+            {
+              "text": "of go oh hi everyone all of a sudden",
+              "timestamp": "4:31"
+            },
+            {
+              "text": "when I talk I why can't I access that",
+              "timestamp": "4:33"
+            },
+            {
+              "text": "sound o it's interesting isn't it so",
+              "timestamp": "4:35"
+            },
+            {
+              "text": "again do it again just go yawn and just",
+              "timestamp": "4:37"
+            },
+            {
+              "text": "go oh just doing that feels fantastic I",
+              "timestamp": "4:45"
+            },
+            {
+              "text": "love that exercise do that 10 times and",
+              "timestamp": "4:48"
+            },
+            {
+              "text": "as you're doing that more and more and",
+              "timestamp": "4:52"
+            },
+            {
+              "text": "more you become very aware you wake up",
+              "timestamp": "4:53"
+            },
+            {
+              "text": "to the awareness of the soft palette and",
+              "timestamp": "4:56"
+            },
+            {
+              "text": "you start to be conscious of how to",
+              "timestamp": "4:58"
+            },
+            {
+              "text": "control it and when you speak you want",
+              "timestamp": "5:00"
+            },
+            {
+              "text": "to learn how to control that soft",
+              "timestamp": "5:02"
+            },
+            {
+              "text": "palette so it's nice and open and More",
+              "timestamp": "5:04"
+            },
+            {
+              "text": "Than This you want to understand while",
+              "timestamp": "5:06"
+            },
+            {
+              "text": "you're making that beautiful sound there",
+              "timestamp": "5:08"
+            },
+            {
+              "text": "with that exercise start to really focus",
+              "timestamp": "5:10"
+            },
+            {
+              "text": "in on where are the vibrations happening",
+              "timestamp": "5:12"
+            },
+            {
+              "text": "and you'll literally start to develop",
+              "timestamp": "5:15"
+            },
+            {
+              "text": "the awareness where you can feel the",
+              "timestamp": "5:16"
+            },
+            {
+              "text": "vibrations happen on your soft palette",
+              "timestamp": "5:18"
+            },
+            {
+              "text": "then every day when you speak while",
+              "timestamp": "5:20"
+            },
+            {
+              "text": "you're speaking every day you want to",
+              "timestamp": "5:22"
+            },
+            {
+              "text": "continuously feel those vibrations",
+              "timestamp": "5:24"
+            },
+            {
+              "text": "happening in your soft pallette and",
+              "timestamp": "5:26"
+            },
+            {
+              "text": "that's when you start to really develop",
+              "timestamp": "5:28"
+            },
+            {
+              "text": "the habit of projecting your voice from",
+              "timestamp": "5:30"
+            },
+            {
+              "text": "the right place that's when you get",
+              "timestamp": "5:33"
+            },
+            {
+              "text": "volume for free as my vocal coaches used",
+              "timestamp": "5:35"
+            },
+            {
+              "text": "to always say that's volume for free",
+              "timestamp": "5:37"
+            },
+            {
+              "text": "volume for days and volume for free I",
+              "timestamp": "5:38"
+            },
+            {
+              "text": "may have unleashed the monster within",
+              "timestamp": "5:42"
+            },
+            {
+              "text": "because I I I I sometimes talk around my",
+              "timestamp": "5:44"
+            },
+            {
+              "text": "wife and she's",
+              "timestamp": "5:46"
+            },
+            {
+              "text": "like like I'm like what are you doing",
+              "timestamp": "5:48"
+            },
+            {
+              "text": "and it's her Apple watch telling me that",
+              "timestamp": "5:50"
+            },
+            {
+              "text": "I'm speaking too loud that I'm damaging",
+              "timestamp": "5:52"
+            },
+            {
+              "text": "her eardrums yay being married to Vin",
+              "timestamp": "5:54"
+            },
+            {
+              "text": "the next one is lip trills",
+              "timestamp": "5:56"
+            },
+            {
+              "text": "and the simple version of that exercise",
+              "timestamp": "6:01"
+            },
+            {
+              "text": "is just to do that for as long as you",
+              "timestamp": "6:02"
+            },
+            {
+              "text": "can control your breath so take a deep",
+              "timestamp": "6:04"
+            },
+            {
+              "text": "breath a deep diaphragmatic breath and",
+              "timestamp": "6:06"
+            },
+            {
+              "text": "you",
+              "timestamp": "6:07"
+            },
+            {
+              "text": "go until you run out of air I can do",
+              "timestamp": "6:18"
+            },
+            {
+              "text": "that for a very long time and just do it",
+              "timestamp": "6:21"
+            },
+            {
+              "text": "until you run out of air and hold one",
+              "timestamp": "6:22"
+            },
+            {
+              "text": "note just hold one note and then the",
+              "timestamp": "6:24"
+            },
+            {
+              "text": "second time you do it if you want a",
+              "timestamp": "6:26"
+            },
+            {
+              "text": "longer version of this exercise is do it",
+              "timestamp": "6:27"
+            },
+            {
+              "text": "to your favorite song do it to your",
+              "timestamp": "6:29"
+            },
+            {
+              "text": "favorite song So for me it'll",
+              "timestamp": "6:30"
+            },
+            {
+              "text": "be if you know the song leave it in the",
+              "timestamp": "6:42"
+            },
+            {
+              "text": "comment section below these three",
+              "timestamp": "6:44"
+            },
+            {
+              "text": "activities to begin with will take you",
+              "timestamp": "6:46"
+            },
+            {
+              "text": "10 to 15 minutes incredible vocal",
+              "timestamp": "6:48"
+            },
+            {
+              "text": "exercises to fix the majority of issues",
+              "timestamp": "6:51"
+            },
+            {
+              "text": "I hope this helps click this video here",
+              "timestamp": "6:55"
+            },
+            {
+              "text": "if you want to not only sound more clear",
+              "timestamp": "6:57"
+            },
+            {
+              "text": "but develop a more powerful sounding",
+              "timestamp": "7:00"
+            },
+            {
+              "text": "voice then you need to check out these",
+              "timestamp": "7:03"
+            },
+            {
+              "text": "five vocal exercises that I teach in",
+              "timestamp": "7:05"
+            },
+            {
+              "text": "that video right there by the way before",
+              "timestamp": "7:08"
+            },
+            {
+              "text": "you go and watch that make sure your",
+              "timestamp": "7:09"
+            },
+            {
+              "text": "fingers are clean it's got to make sense",
+              "timestamp": "7:11"
+            },
+            {
+              "text": "when you when you click that video see",
+              "timestamp": "7:14"
+            },
+            {
+              "text": "you in the next one",
+              "timestamp": "7:16"
+            }
+          ]
+        }
+      ],
+      "YouTube video URL": [
+        {
+          "Full URL": "http://youtube.com/watch?v=BEuwA7Cbbuc",
+          "submittedAt": "2025-03-14T05:13:13.708-04:00",
+          "formMode": "test"
+        }
+      ]
+    },
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "84b87970f40cd2e5f4aae113e07b629b98eb2efe3238c4854405fe22dff99738"
+    }
+  }
